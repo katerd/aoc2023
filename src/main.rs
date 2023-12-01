@@ -19,7 +19,7 @@ fn main() -> std::io::Result<()> {
     let mut first: i32= -1;
     let mut last: i32 = -1;
 
-    for (i, chr) in contents.chars().into_iter().enumerate() {
+     for (i, chr) in contents.chars().enumerate() {
         let mut digit = -1;
 
         if is_digit_str(&contents, i, "nine") {
