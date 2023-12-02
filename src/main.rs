@@ -9,7 +9,11 @@ fn is_digit_str(contents: &String, i: usize, x: &str) -> bool {
     return slice == x;
 }
 
-fn main() -> std::io::Result<()> {
+fn main() {
+    day_1().ok();
+}
+
+fn day_1() -> std::io::Result<()> {
     let file_path = "1.txt";
     let mut file = File::open(file_path)?;
     let mut contents = String::new();
