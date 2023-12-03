@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::Read;
 
@@ -13,7 +13,142 @@ fn is_digit_str(contents: &String, i: usize, x: &str) -> bool {
 fn main() {
     //day_1().ok();
     //day_2().ok();
-    day_2_part_2().ok();
+    //day_2_part_2().ok();
+    day_3().ok();
+}
+
+#[derive(Copy, Clone)]
+struct NumberSpan {
+    row: i32,
+    col_start: i32,
+    col_end: i32,
+    value: i32
+}
+
+fn day_3() -> std::io::Result<()> {
+    let file_path = "3.txt";
+    let mut file = File::open(file_path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    let lines: Vec<&str> = contents.lines().collect();
+
+    let mut number_spans = Vec::new();
+
+    for (rowIndex, line) in lines.iter().enumerate() {
+
+        let mut col_index = 0;
+
+        while col_index < line.len() {
+
+            let chr = line.chars().nth(col_index).unwrap();
+
+            if chr.is_digit(10) {
+
+                let start_index = col_index;
+
+                let mut end_index = col_index;
+
+                while end_index < line.len() - 1 {
+                    println!("{} {} {} === {}", rowIndex, end_index, col_index, line.chars().nth(end_index + 1).unwrap());
+                    let test_chr = line.chars().nth(end_index + 1).unwrap();
+                    if test_chr.is_digit(10) {
+                        end_index += 1;
+                    } else {
+                        number_spans.push(NumberSpan {
+                            row: rowIndex as i32,
+                            col_start: start_index as i32,
+                            col_end: end_index as i32,
+                            value: line[start_index..end_index+1].parse::<i32>().unwrap()
+                        });
+
+                        col_index = end_index + 1;
+                        break
+                    }
+                }
+
+                if (end_index == line.len() - 1) {
+                    println!("Probably got here from EOL");
+                    number_spans.push(NumberSpan {
+                        row: rowIndex as i32,
+                        col_start: start_index as i32,
+                        col_end: end_index as i32,
+                        value: line[start_index..end_index+1].parse::<i32>().unwrap()
+                    });
+
+                    col_index += 1
+                }
+            }
+            else {
+                col_index += 1;
+            }
+        }
+    }
+
+    println!("Found {} numbers ", number_spans.len());
+
+    for num in &number_spans {
+        println!("  - {} from {} to {}, row {}", num.value, num.col_start, num.col_end, num.row);
+    }
+
+    println!(" -------------------------------");
+
+    let mut result = 0;
+
+    for (rowIndex, line) in lines.iter().enumerate() {
+        for (columnIndex, chr) in line.chars().enumerate() {
+
+            if chr.is_digit(10) || chr == '.' { //} chr != '*' && chr != '#' && chr != '$' {
+                continue
+            }
+
+            let s = get_location_sum(rowIndex as i32, columnIndex as i32, &number_spans);
+
+            println!("Location sum {}", s);
+
+            result += s;
+        }
+    }
+
+    println!(">>> Result: {}", result);
+
+    Ok(())
+}
+
+fn get_location_sum(row: i32, column: i32, nums: &Vec<NumberSpan>) -> i32 {
+
+    let mut positions = HashSet::new();
+
+    println!("Row: {}, Column: {}", row, column);
+
+    let mut r = row - 1;
+    while r <= row + 1 {
+        let mut c = column - 1;
+        while c <= column + 1 {
+
+            let val = nums.iter().position(|&x| x.col_start <= c && x.col_end >= c && x.row == r);
+
+            if val.is_none() {
+
+                println!("   - No numbers around row {}, column {}", r, c);
+
+                c += 1;
+                continue
+            }
+
+            positions.insert(val.unwrap() as i32);
+
+            c += 1
+        }
+        r += 1
+    }
+
+    for item in &positions {
+        let num = nums[(*item) as usize];
+        println!("   - {} from {} to {}", num.value, num.col_start, num.col_end);
+    }
+
+    return positions.iter().map(|&x| nums[x as usize].value).sum();
 }
 
 fn day_2_part_2() -> std::io::Result<()> {
