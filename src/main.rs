@@ -98,11 +98,16 @@ fn day_3() -> std::io::Result<()> {
     for (rowIndex, line) in lines.iter().enumerate() {
         for (columnIndex, chr) in line.chars().enumerate() {
 
-            if chr.is_digit(10) || chr == '.' { //} chr != '*' && chr != '#' && chr != '$' {
+           /* if chr.is_digit(10) || chr == '.' {
+                continue
+            }*/
+
+            if chr != '*' {
                 continue
             }
 
-            let s = get_location_sum(rowIndex as i32, columnIndex as i32, &number_spans);
+            //let s = get_location_sum(rowIndex as i32, columnIndex as i32, &number_spans);
+            let s = get_location_gear_ratio(rowIndex as i32, columnIndex as i32, &number_spans);
 
             println!("Location sum {}", s);
 
@@ -113,6 +118,43 @@ fn day_3() -> std::io::Result<()> {
     println!(">>> Result: {}", result);
 
     Ok(())
+}
+
+fn get_location_gear_ratio(row: i32, column: i32, nums: &Vec<NumberSpan>) -> i32 {
+
+    let mut positions = HashSet::new();
+
+    println!("Row: {}, Column: {}", row, column);
+
+    let mut r = row - 1;
+    while r <= row + 1 {
+        let mut c = column - 1;
+        while c <= column + 1 {
+            let val = nums.iter().position(|&x| x.col_start <= c && x.col_end >= c && x.row == r);
+            if val.is_none() {
+                println!("   - No numbers around row {}, column {}", r, c);
+                c += 1;
+                continue
+            }
+            positions.insert(val.unwrap() as i32);
+            c += 1
+        }
+        r += 1
+    }
+
+    let mut ratio = 1;
+
+    if positions.len() < 2 {
+        return 0;
+    }
+
+    for item in &positions {
+        let num = nums[(*item) as usize];
+        ratio *= num.value;
+        println!("   - {} from {} to {}", num.value, num.col_start, num.col_end);
+    }
+
+    return ratio;
 }
 
 fn get_location_sum(row: i32, column: i32, nums: &Vec<NumberSpan>) -> i32 {
