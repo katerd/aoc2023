@@ -1,5 +1,3 @@
 # Advent of Code 2023
 
-# [Day 1: Trebuchet?!](https://adventofcode.com/2023/day/1)
-
-
+This code is not great. I'm writing VB6 with Rust syntax.
