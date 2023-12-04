@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::io::Read;
 
@@ -18,52 +18,61 @@ fn main() {
     day_4().ok();
 }
 
+fn winning_number_count(line: &str) -> i32 {
+    let num_section = line.split(":").nth(1).unwrap();
+    let parts: Vec<&str> = num_section.trim().split("|").collect();
+
+    let answer_raw = parts[0].trim().replace("  ", " ");
+    let answer_strs: Vec<&str> = answer_raw.split(" ").collect();
+
+    let card_raw = parts[1].trim().replace("  ", " ");
+    let card_strs: Vec<&str> = card_raw.split(" ").collect();
+
+    let mut match_count = 0;
+
+    for card_num in card_strs {
+        if answer_strs.contains(&card_num) {
+            match_count += 1
+        }
+    }
+
+    return match_count
+}
+
 fn day_4() -> std::io::Result<()> {
     let file_path = "4.txt";
     let mut file = File::open(file_path)?;
     let mut contents = String::new();
     file.read_to_string(&mut contents)?;
 
-    let lines: Vec<&str> = contents.lines().collect();
+    let lines: Vec<(i32, &str)> = contents
+        .lines()
+        .map(|line| (winning_number_count(&line), line))
+        .collect();
+
+    let mut line_queue = VecDeque::new();
+    line_queue.extend(lines.clone());
 
     let mut grand_total = 0;
 
-    for line in lines.iter() {
-        println!("{}", line);
+    while !line_queue.is_empty() {
 
-        let num_section = line.split(":").nth(1).unwrap();
-        let parts: Vec<&str> = num_section.trim().split("|").collect();
+        let line = line_queue.pop_front().unwrap();
+        let mut match_count = line.0;
+        let mut add_count = 0;
 
-        let answer_raw = parts[0].trim().replace("  ", " ");
-        let answer_strs: Vec<&str> = answer_raw.split(" ").collect();
-
-        let card_raw = parts[1].trim().replace("  ", " ");
-        let card_strs: Vec<&str> = card_raw.split(" ").collect();
-
-        let mut match_count = 0;
-        let mut card_num_value = 0;
-
-        for card_num in card_strs {
-            if answer_strs.contains(&card_num) {
-                match_count += 1;
-
-                println!("    - Match: {}", card_num);
-
-                if (card_num_value == 0) {
-                    card_num_value = 1
-                } else {
-                    card_num_value *= 2
-                }
+        if match_count > 0 {
+            let index = lines.iter().position(|&x| x == line).unwrap();
+            let to_grab = lines[index + 1..index + 1 + match_count as usize].iter();
+            for item in to_grab {
+                line_queue.push_back(*item);
+                grand_total += 1;
+                add_count += 1
             }
         }
-
-        println!("  - Match count: {}", match_count);
-        println!("  - Card num value: {}", card_num_value);
-
-        grand_total += card_num_value
     }
 
-    println!("Grand total: {}", grand_total);
+    println!("Grand total: {}", grand_total + lines.len());
 
     Ok(())
 }
