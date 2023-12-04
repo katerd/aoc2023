@@ -14,7 +14,58 @@ fn main() {
     //day_1().ok();
     //day_2().ok();
     //day_2_part_2().ok();
-    day_3().ok();
+    //day_3().ok();
+    day_4().ok();
+}
+
+fn day_4() -> std::io::Result<()> {
+    let file_path = "4.txt";
+    let mut file = File::open(file_path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    let lines: Vec<&str> = contents.lines().collect();
+
+    let mut grand_total = 0;
+
+    for line in lines.iter() {
+        println!("{}", line);
+
+        let num_section = line.split(":").nth(1).unwrap();
+        let parts: Vec<&str> = num_section.trim().split("|").collect();
+
+        let answer_raw = parts[0].trim().replace("  ", " ");
+        let answer_strs: Vec<&str> = answer_raw.split(" ").collect();
+
+        let card_raw = parts[1].trim().replace("  ", " ");
+        let card_strs: Vec<&str> = card_raw.split(" ").collect();
+
+        let mut match_count = 0;
+        let mut card_num_value = 0;
+
+        for card_num in card_strs {
+            if answer_strs.contains(&card_num) {
+                match_count += 1;
+
+                println!("    - Match: {}", card_num);
+
+                if (card_num_value == 0) {
+                    card_num_value = 1
+                } else {
+                    card_num_value *= 2
+                }
+            }
+        }
+
+        println!("  - Match count: {}", match_count);
+        println!("  - Card num value: {}", card_num_value);
+
+        grand_total += card_num_value
+    }
+
+    println!("Grand total: {}", grand_total);
+
+    Ok(())
 }
 
 #[derive(Copy, Clone)]
