@@ -1,6 +1,8 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs::File;
 use std::io::Read;
+use std::primitive;
+use regex::Regex;
 
 fn is_digit_str(contents: &String, i: usize, x: &str) -> bool {
     if (i + x.len()) >= contents.len() {
@@ -15,7 +17,166 @@ fn main() {
     //day_2().ok();
     //day_2_part_2().ok();
     //day_3().ok();
-    day_4().ok();
+    //day_4().ok();
+    day_5().ok();
+}
+
+#[derive(Debug)]
+struct MappingEntry {
+    from_type: String,
+    to_type: String,
+    ranges: Vec<(i64, i64, i64)>
+}
+
+fn day_5() -> std::io::Result<()> {
+    let file_path = "5.txt";
+    let mut file = File::open(file_path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    // s-to-d map:
+    // d s r
+    // start at "seed", end at "location"
+
+    let mut type_map : Vec<MappingEntry> = Vec::new();
+    let mut seed_ints: Vec<i64> = Vec::new();
+
+    let a_to_b_regex = Regex::new("(?<from>\\w+)-to-(?<to>\\w+) map:").unwrap();
+
+    let lines: Vec<&str> = contents.lines().collect();
+    let mut index = 0;
+
+    // Construct "useful" data structure
+    while index < lines.len() {
+        let mut line = lines[index];
+        if line == "" {
+            index += 1;
+            continue
+        }
+
+        if line.starts_with("seeds:") {
+            let intermediate_seed_ints : Vec<i64> = line
+                .replace("seeds: ", "")
+                .split(" ")
+                .map(|x| x.parse::<i64>().unwrap())
+                .collect();
+
+            for chunk in intermediate_seed_ints.chunks(2) {
+                let mut val = chunk[0];
+                while val <= chunk[0] + chunk[1] {
+                    seed_ints.push(val);
+                    val += 1;
+                }
+            }
+
+            println!("Seed ints: {}", seed_ints.len());
+        }
+
+        let Some(map_start) = a_to_b_regex.captures(line) else {
+            index += 1;
+            continue
+        };
+
+        // Start of mapping group
+
+        println!("Mapping is from {} to {}", &map_start["from"], &map_start["to"]);
+        index += 1;
+
+        let map_from = map_start["from"].to_string();
+        let map_to = map_start["to"].to_string();
+
+        // Read mapping group lines
+        let mut ranges: Vec<(i64, i64, i64)> = Vec::new();
+
+        while index < lines.len() {
+            line = lines[index];
+
+            if line == "" || line == ">>>EOF" {
+                println!("End of mapping.");
+
+                let mapping_entry = MappingEntry {
+                    from_type: map_from,
+                    to_type: map_to,
+                    ranges: ranges.clone()
+                };
+
+                type_map.push(mapping_entry);
+                break
+            }
+            else {
+                println!("    Mapping Number Line: {}", line);
+                let parts: Vec<&str> = line.split(" ").collect();
+                let range_start = parts[0].parse::<i64>().unwrap();
+                let range_end = parts[1].parse::<i64>().unwrap();
+                let range_ratio = parts[2].parse::<i64>().unwrap();
+                ranges.push((range_start, range_end, range_ratio));
+            }
+            index += 1
+        }
+        index += 1
+    }
+
+
+    println!("Type map: {:?}", type_map);
+
+    // Use "useful" data structure
+    println!("Finding path from seed to location");
+
+    let mut result : i64 = 9999999999999;
+
+    let seed_count = seed_ints.len();
+    println!("Calculating {} seeds", seed_count);
+
+    let mut calc_count : i64 = 0;
+
+    for seed in seed_ints {
+
+        //println!(" ******************** SEED {} *************************", seed);
+
+        let mut current_position_index = seed;
+        let mut position_name = "seed";
+
+        while position_name != "location" {
+            //println!("Finding mapping for {}", position_name);
+            let mapping = type_map
+                .iter()
+                .find(|&x|
+                    x.from_type == position_name)
+                .unwrap();
+
+            //println!("Mapping is from {} to {}", mapping.from_type, mapping.to_type);
+            position_name = &mapping.to_type;
+
+            //let mut had_match = false;
+            for map_range in mapping.ranges.iter() {
+                //println!("  - CPOS CHECK cur:{} dst={} src={}", current_position_index, map_range.0, map_range.1);
+                if current_position_index >= map_range.1 && current_position_index < map_range.1 + map_range.2 {
+                    let diff = current_position_index - map_range.1;
+                    //println!("      Diff {}", diff);
+                    current_position_index = map_range.0 + diff;
+                    //had_match = true;
+                    break;
+                }
+            }
+
+            //println!("  - Position is now {} on {}", current_position_index, position_name);
+        }
+
+        if current_position_index < result {
+            result = current_position_index;
+            //println!("  - New result {} {}", result, current_position_index);
+        }
+
+        calc_count += 1;
+
+        if calc_count % 100000 == 0 {
+            println!("Calculated {} seeds out of {}", calc_count, seed_count);
+        }
+    }
+
+    println!("Final position is {}", result);
+
+    Ok(())
 }
 
 fn winning_number_count(line: &str) -> i32 {
