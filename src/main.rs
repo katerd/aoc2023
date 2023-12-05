@@ -3,6 +3,7 @@ use std::fs::File;
 use std::io::Read;
 use std::primitive;
 use regex::Regex;
+use rayon::prelude::*;
 
 fn is_digit_str(contents: &String, i: usize, x: &str) -> bool {
     if (i + x.len()) >= contents.len() {
@@ -129,7 +130,35 @@ fn day_5() -> std::io::Result<()> {
 
     let mut calc_count : i64 = 0;
 
-    for seed in seed_ints {
+    let nearest_seed = seed_ints.par_iter().map(|seed| {
+        let mut current_position_index = *seed;
+        let mut position_name = "seed";
+
+        while position_name != "location" {
+            //println!("Finding mapping for {}", position_name);
+            let mapping = type_map
+                .iter()
+                .find(|&x|
+                    x.from_type == position_name)
+                .unwrap();
+
+            position_name = &mapping.to_type;
+
+            for map_range in mapping.ranges.iter() {
+                if current_position_index >= map_range.1 && current_position_index < map_range.1 + map_range.2 {
+                    let diff = current_position_index - map_range.1;
+                    current_position_index = map_range.0 + diff;
+                    break;
+                }
+            }
+        }
+
+        return current_position_index
+    }).min().unwrap();
+
+    println!("Nearest seed is {}", nearest_seed);
+
+    /*for seed in seed_ints.par_iter() {
 
         //println!(" ******************** SEED {} *************************", seed);
 
@@ -144,27 +173,19 @@ fn day_5() -> std::io::Result<()> {
                     x.from_type == position_name)
                 .unwrap();
 
-            //println!("Mapping is from {} to {}", mapping.from_type, mapping.to_type);
             position_name = &mapping.to_type;
 
-            //let mut had_match = false;
             for map_range in mapping.ranges.iter() {
-                //println!("  - CPOS CHECK cur:{} dst={} src={}", current_position_index, map_range.0, map_range.1);
                 if current_position_index >= map_range.1 && current_position_index < map_range.1 + map_range.2 {
                     let diff = current_position_index - map_range.1;
-                    //println!("      Diff {}", diff);
                     current_position_index = map_range.0 + diff;
-                    //had_match = true;
                     break;
                 }
             }
-
-            //println!("  - Position is now {} on {}", current_position_index, position_name);
         }
 
         if current_position_index < result {
             result = current_position_index;
-            //println!("  - New result {} {}", result, current_position_index);
         }
 
         calc_count += 1;
@@ -172,9 +193,9 @@ fn day_5() -> std::io::Result<()> {
         if calc_count % 100000 == 0 {
             println!("Calculated {} seeds out of {}", calc_count, seed_count);
         }
-    }
+    }*/
 
-    println!("Final position is {}", result);
+    //println!("Final position is {}", result);
 
     Ok(())
 }
